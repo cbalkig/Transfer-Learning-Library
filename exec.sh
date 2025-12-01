@@ -70,7 +70,7 @@ except Exception as e:
 echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py $DANN_ARGS"
 
 # Removed \"$CFG_FILE\" from the end of the command below as requested
-nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py \
+nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py --scratch \
     $DANN_ARGS >> "$LOG_FILE" 2>&1 &
 
 PY_PID=$!
