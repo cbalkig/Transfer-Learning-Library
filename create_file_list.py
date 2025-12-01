@@ -35,7 +35,7 @@ def create_list(root_dir, sub_folder, output_filename):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate file lists from YAML config.")
-    parser.add_argument("--cfg-file", required=True, type=str, help="Path to the YAML configuration file")
+    parser.add_argument("--cfg_file", required=True, type=str, help="Path to the YAML configuration file")
     args = parser.parse_args()
 
     # Load YAML configuration
