@@ -35,7 +35,7 @@ LOG_FILE="$LOG_DIR/main_${TS}_${CFG_TAG}.log"
 ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 
 echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
-#TODO ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
+./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
 # --- Parse YAML to build arguments for dann.py ---
 # This uses python to safely extract keys/values from the YAML 'dann' block
