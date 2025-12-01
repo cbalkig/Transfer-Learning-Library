@@ -50,7 +50,7 @@ def main():
     source_output_txt = os.path.join(root_dir, f"{source_folder}_list.txt")
     target_output_txt = os.path.join(root_dir, f"{target_folder}_list.txt")
 
-    print(f"Processing configuration from: {args.cfg}")
+    print(f"Processing configuration from: {args.cfg_file}")
 
     # Generate lists
     source_classes = create_list(root_dir, source_folder, source_output_txt)
