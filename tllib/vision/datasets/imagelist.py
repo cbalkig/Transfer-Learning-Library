@@ -7,9 +7,10 @@ import warnings
 from typing import Optional, Callable, Tuple, Any, List, Iterable
 import bisect
 
-from torch.utils.data.dataset import Dataset, T_co, IterableDataset
+from torch.utils.data.dataset import Dataset, IterableDataset
 import torchvision.datasets as datasets
 from torchvision.datasets.folder import default_loader
+from torch.utils.data.dataset import _T_co as T_co
 
 
 class ImageList(datasets.VisionDataset):

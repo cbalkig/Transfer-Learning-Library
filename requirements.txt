@@ -8,5 +8,6 @@ webcolors
 matplotlib
 opencv-python
 numba
+tllib
 timm
 pyyaml
