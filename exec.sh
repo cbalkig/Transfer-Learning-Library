@@ -36,23 +36,43 @@ ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
 ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
+# --- Parse YAML to build arguments for dann.py ---
+# This uses python to safely extract keys/values from the YAML 'dann' block
+# and 'root_dir' to build the command line flags.
+DANN_ARGS=$(./.venv/bin/python -c "
+import sys, yaml
+try:
+    with open('$CFG_FILE', 'r') as f:
+        cfg = yaml.safe_load(f)
+
+    args = []
+
+    # 1. Positional argument: Data Root (prefer 'root_dir' from yaml)
+    if 'root_dir' in cfg:
+        args.append(str(cfg['root_dir']))
+
+    # 2. Append keys from the 'dann' section
+    if 'dann' in cfg and isinstance(cfg['dann'], dict):
+        for k, v in cfg['dann'].items():
+            # Use single dash for single letter keys (-d), double for longer (--epochs)
+            prefix = '-' if len(k) == 1 else '--'
+            args.append(f'{prefix}{k} {v}')
+
+    print(' '.join(args))
+except Exception as e:
+    # Print error to stderr so it doesn't get captured into the variable
+    print(f'Error parsing yaml: {e}', file=sys.stderr)
+    sys.exit(1)
+")
+
 # --- start training under nohup ---
-echo "Starting: ./.venv/bin/python dann.py"
-nohup ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py /Users/c.balkigemirter/PycharmProjects/PhD-UDA-files/Data/BenchmarkData/NeuroDomain-k-fold-1
-                                                                                 -d
-                                                                                 NeuroDomainVegFru
-                                                                                 -s
-                                                                                 neurodomain
-                                                                                 -t
-                                                                                 vegfru-test
-                                                                                 -a
-                                                                                 resnet50
-                                                                                 --epochs
-                                                                                 20
-                                                                                 --seed
-                                                                                 1
-                                                                                 --log
-                                                                                 logs/dann/NeuroDomain2Vegfru "$CFG_FILE" >> "$LOG_FILE" 2>&1 &
+echo "Starting: ./.venv/bin/python dann.py $DANN_ARGS \"$CFG_FILE\""
+
+# We pass the constructed DANN_ARGS followed by the CFG_FILE (as in the original script)
+nohup ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py \
+    $DANN_ARGS \
+    "$CFG_FILE" >> "$LOG_FILE" 2>&1 &
+
 PY_PID=$!
 echo "$PY_PID" > "$LOG_DIR/dann.pid"
 
