@@ -8,9 +8,10 @@ from typing import Optional, Callable, Tuple, Any, List, Iterable
 import bisect
 
 from torch.utils.data.dataset import Dataset, IterableDataset
+from torch.utils.data.dataset import _T_co as T_co
 import torchvision.datasets as datasets
 from torchvision.datasets.folder import default_loader
-from torch.utils.data.dataset import _T_co as T_co
+
 
 
 class ImageList(datasets.VisionDataset):
