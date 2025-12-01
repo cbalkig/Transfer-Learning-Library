@@ -52,6 +52,9 @@ try:
     if 'root_dir' in cfg:
         args.append(str(cfg['root_dir']))
 
+    if cfg.get('scratch') is True:
+        args.append('--scratch')
+
     # 2. Append keys from the 'dann' section
     if 'dann' in cfg and isinstance(cfg['dann'], dict):
         for k, v in cfg['dann'].items():
@@ -67,7 +70,7 @@ except Exception as e:
 ")
 
 # --- start training under nohup ---
-echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py --scratch $DANN_ARGS"
+echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py $DANN_ARGS"
 
 # Removed \"$CFG_FILE\" from the end of the command below as requested
 nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py --scratch \

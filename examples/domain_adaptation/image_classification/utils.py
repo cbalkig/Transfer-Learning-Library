@@ -55,9 +55,21 @@ def get_dataset_names():
 
 
 def get_dataset(dataset_name, root, source, target, train_source_transform, val_transform, train_target_transform=None):
+    def concat_dataset(tasks, start_idx, **kwargs):
+        # return ConcatDataset([dataset(task=task, **kwargs) for task in tasks])
+        return MultipleDomainsDataset([datasets.__dict__[dataset_name](task=task, **kwargs) for task in tasks], tasks,
+                                  domain_ids=list(range(start_idx, start_idx + len(tasks))))
+
     if train_target_transform is None:
         train_target_transform = train_source_transform
-    if dataset_name == "Digits":
+    if dataset_name  == "NeuroDomain":
+        train_source_dataset = concat_dataset(root=root, tasks=source, split='train', download=True, transform=train_source_transform, start_idx=0)
+        train_target_dataset = concat_dataset(root=root, tasks=target, split='test', download=True, transform=train_target_transform, start_idx=0)
+        val_dataset = concat_dataset(root=root, tasks=target, split='val', download=True, transform=val_transform, start_idx=0)
+        test_dataset = concat_dataset(root=root, tasks=target, split='test', download=True, transform=val_transform, start_idx=0)
+        class_names = train_source_dataset.datasets[0].classes
+        num_classes = len(class_names)
+    elif dataset_name == "Digits":
         train_source_dataset = datasets.__dict__[source[0]](osp.join(root, source[0]), download=True,
                                                             transform=train_source_transform)
         train_target_dataset = datasets.__dict__[target[0]](osp.join(root, target[0]), download=True,
@@ -69,11 +81,6 @@ def get_dataset(dataset_name, root, source, target, train_source_transform, val_
     elif dataset_name in datasets.__dict__:
         # load datasets from tllib.vision.datasets
         dataset = datasets.__dict__[dataset_name]
-
-        def concat_dataset(tasks, start_idx, **kwargs):
-            # return ConcatDataset([dataset(task=task, **kwargs) for task in tasks])
-            return MultipleDomainsDataset([dataset(task=task, **kwargs) for task in tasks], tasks,
-                                          domain_ids=list(range(start_idx, start_idx + len(tasks))))
 
         train_source_dataset = concat_dataset(root=root, tasks=source, download=True, transform=train_source_transform,
                                               start_idx=0)
