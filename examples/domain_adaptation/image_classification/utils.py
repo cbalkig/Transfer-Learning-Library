@@ -109,6 +109,9 @@ def validate(val_loader, model, args, device) -> float:
     else:
         confmat = None
 
+    all_preds = []
+    all_targets = []
+
     with torch.no_grad():
         end = time.time()
         for i, data in enumerate(val_loader):
@@ -119,6 +122,10 @@ def validate(val_loader, model, args, device) -> float:
             # compute output
             output = model(images)
             loss = F.cross_entropy(output, target)
+
+            _, pred = torch.max(output, 1)
+            all_preds.extend(pred.cpu().numpy())
+            all_targets.extend(target.cpu().numpy())
 
             # measure accuracy and record loss
             acc1, = accuracy(output, target, topk=(1,))
@@ -134,7 +141,8 @@ def validate(val_loader, model, args, device) -> float:
             if i % args.print_freq == 0:
                 progress.display(i)
 
-        print(' * Acc@1 {top1.avg:.3f}'.format(top1=top1))
+        f1 = f1_score(all_targets, all_preds, average='macro')
+        print(f' * Acc@1 {top1.avg:.3f} F1 Score {f1:.3f}')
         if confmat:
             print(confmat.format(args.class_names))
 
