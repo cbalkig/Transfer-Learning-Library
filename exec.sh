@@ -70,7 +70,7 @@ except Exception as e:
 echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py $DANN_ARGS \"$CFG_FILE\""
 
 # We pass the constructed DANN_ARGS followed by the CFG_FILE (as in the original script)
-nohup ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py \
+nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py \
     $DANN_ARGS \
     "$CFG_FILE" >> "$LOG_FILE" 2>&1 &
 
