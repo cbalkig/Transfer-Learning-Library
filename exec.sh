@@ -66,7 +66,7 @@ except Exception as e:
 ")
 
 # --- start training under nohup ---
-echo "Starting: ./.venv/bin/python dann.py $DANN_ARGS \"$CFG_FILE\""
+echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py $DANN_ARGS \"$CFG_FILE\""
 
 # We pass the constructed DANN_ARGS followed by the CFG_FILE (as in the original script)
 nohup ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py \
