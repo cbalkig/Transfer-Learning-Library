@@ -21,7 +21,7 @@ from tllib.vision.transforms import ResizeImage
 from tllib.utils.metric import accuracy, ConfusionMatrix
 from tllib.utils.meter import AverageMeter, ProgressMeter
 from tllib.vision.datasets.imagelist import MultipleDomainsDataset
-
+from sklearn.metrics import f1_score
 
 def get_model_names():
     return sorted(
