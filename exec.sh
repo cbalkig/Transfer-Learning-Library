@@ -67,7 +67,7 @@ except Exception as e:
 ")
 
 # --- start training under nohup ---
-echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py $DANN_ARGS"
+echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py --scratch $DANN_ARGS"
 
 # Removed \"$CFG_FILE\" from the end of the command below as requested
 nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py --scratch \
