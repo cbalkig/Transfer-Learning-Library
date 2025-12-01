@@ -34,7 +34,7 @@ LOG_FILE="$LOG_DIR/main_${TS}_${CFG_TAG}.log"
 ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 
 echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
-./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
+#TODO ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
 # --- Parse YAML to build arguments for dann.py ---
 # This uses python to safely extract keys/values from the YAML 'dann' block
@@ -76,7 +76,7 @@ nohup ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py
 PY_PID=$!
 echo "$PY_PID" > "$LOG_DIR/dann.pid"
 
-echo "main.py PID: $PY_PID"
+echo "dann.py PID: $PY_PID"
 echo "Log file   : $LOG_FILE"
 echo "Latest log : $LOG_DIR/latest.log"
 echo
@@ -90,7 +90,7 @@ if [ -t 1 ]; then
   wait "$PY_PID" || true
   kill "$TAIL_PID" >/dev/null 2>&1 || true
   echo
-  echo "main.py exited. See full logs in: $LOG_FILE"
+  echo "dann.py exited. See full logs in: $LOG_FILE"
 else
   echo "Non-interactive session detected. Training continues under nohup."
   echo "Check progress later with: tail -f $LOG_FILE"
