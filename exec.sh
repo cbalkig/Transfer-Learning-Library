@@ -33,11 +33,28 @@ LOG_FILE="$LOG_DIR/main_${TS}_${CFG_TAG}.log"
 # Symlink to the latest log for convenience
 ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 
-# --- start training under nohup ---
 echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
-nohup ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE" 2>&1 &
+./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
+
+# --- start training under nohup ---
+echo "Starting: ./.venv/bin/python dann.py"
+nohup ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py /Users/c.balkigemirter/PycharmProjects/PhD-UDA-files/Data/BenchmarkData/NeuroDomain-k-fold-1
+                                                                                 -d
+                                                                                 NeuroDomainVegFru
+                                                                                 -s
+                                                                                 neurodomain
+                                                                                 -t
+                                                                                 vegfru-test
+                                                                                 -a
+                                                                                 resnet50
+                                                                                 --epochs
+                                                                                 20
+                                                                                 --seed
+                                                                                 1
+                                                                                 --log
+                                                                                 logs/dann/NeuroDomain2Vegfru "$CFG_FILE" >> "$LOG_FILE" 2>&1 &
 PY_PID=$!
-echo "$PY_PID" > "$LOG_DIR/create_file_list.pid"
+echo "$PY_PID" > "$LOG_DIR/dann.pid"
 
 echo "main.py PID: $PY_PID"
 echo "Log file   : $LOG_FILE"
