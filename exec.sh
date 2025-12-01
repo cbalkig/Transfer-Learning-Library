@@ -18,7 +18,8 @@ SHUTDOWN_GRACE_SECS="${SHUTDOWN_GRACE_SECS:-120}"
 
 # --- enter repo root (directory containing this script) ---
 cd "$(dirname "$0")"
-export PYTHONPATH=$PYTHONPATH:.
+#export PYTHONPATH=$PYTHONPATH:.
+PYTHONPATH=.
 
 # --- update repo (best-effort) ---
 git pull --rebase --autostash || echo "git pull failed (continuing anyway)"
@@ -54,6 +55,11 @@ try:
 
     if cfg.get('scratch') is True:
         args.append('--scratch')
+
+    for k, v in cfg.items():
+        # Use single dash for single letter keys (-d), double for longer (--epochs)
+        prefix = '-' if len(k) == 1 else '--'
+        args.append(f'{prefix}{k} {v}')
 
     # 2. Append keys from the 'dann' section
     if 'dann' in cfg and isinstance(cfg['dann'], dict):
