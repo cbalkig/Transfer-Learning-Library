@@ -39,7 +39,7 @@ def main():
     args = parser.parse_args()
 
     # Load YAML configuration
-    with open(args.cfg, 'r') as f:
+    with open(args.cfg_file, 'r') as f:
         config = yaml.safe_load(f)
 
     root_dir = config.get('root_dir')
