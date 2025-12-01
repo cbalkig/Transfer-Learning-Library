@@ -13,7 +13,6 @@ import torchvision.datasets as datasets
 from torchvision.datasets.folder import default_loader
 
 
-
 class ImageList(datasets.VisionDataset):
     """A generic Dataset class for image classification
 
