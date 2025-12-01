@@ -1,5 +1,5 @@
-torch>=1.7.0
-torchvision>=0.5.0
+torch
+torchvision
 numpy
 prettytable
 tqdm
@@ -8,3 +8,4 @@ webcolors
 matplotlib
 opencv-python
 numba
+timm
