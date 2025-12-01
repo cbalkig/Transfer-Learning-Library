@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-export PYTHONPATH=$PYTHONPATH:.
-
 die() { echo "Error: $*" >&2; exit 1; }
 
 # --- args ---
@@ -20,6 +18,7 @@ SHUTDOWN_GRACE_SECS="${SHUTDOWN_GRACE_SECS:-120}"
 
 # --- enter repo root (directory containing this script) ---
 cd "$(dirname "$0")"
+export PYTHONPATH=$PYTHONPATH:.
 
 # --- update repo (best-effort) ---
 git pull --rebase --autostash || echo "git pull failed (continuing anyway)"
