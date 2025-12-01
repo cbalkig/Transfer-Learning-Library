@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+export PYTHONPATH=$PYTHONPATH:.
+
 die() { echo "Error: $*" >&2; exit 1; }
 
 # --- args ---
