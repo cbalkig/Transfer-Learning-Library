@@ -13,15 +13,14 @@ case "$CFG_FILE" in
   *) die "Config must be a .yaml/.yml file: $CFG_FILE" ;;
 esac
 
-# Optional: grace period (seconds) before shutdown check (can override via env)
+# Optional: grace period (seconds) before shutdown check
 SHUTDOWN_GRACE_SECS="${SHUTDOWN_GRACE_SECS:-120}"
 
-# --- enter repo root (directory containing this script) ---
+# --- enter repo root ---
 cd "$(dirname "$0")"
-#export PYTHONPATH=$PYTHONPATH:.
 PYTHONPATH=.
 
-# --- update repo (best-effort) ---
+# --- update repo ---
 git pull --rebase --autostash || echo "git pull failed (continuing anyway)"
 
 # --- logging setup ---
@@ -31,46 +30,50 @@ TS="$(date '+%Y%m%d_%H%M%S')"
 CFG_BASENAME="$(basename "$CFG_FILE")"
 CFG_TAG="${CFG_BASENAME%.*}"
 LOG_FILE="$LOG_DIR/main_${TS}_${CFG_TAG}.log"
-
-# Symlink to the latest log for convenience
 ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 
 echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
 ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
 # --- Parse YAML to build arguments for dann.py ---
-# This uses python to safely extract keys/values from the YAML 'dann' block
-# and 'root_dir' to build the command line flags.
 DANN_ARGS=$(./.venv/bin/python -c "
 import sys, yaml
+
 try:
     with open('$CFG_FILE', 'r') as f:
         cfg = yaml.safe_load(f)
 
     args = []
 
-    # 1. Positional argument: Data Root (prefer 'root_dir' from yaml)
+    # Keys to exclude from the generic loop because they are handled manually
+    # 'root_dir': Positional arg
+    # 'scratch': Boolean flag
+    # 'dann': Needs flattening
+    ignore_keys = {'root_dir', 'scratch', 'dann'}
+
+    # 1. Positional argument: Data Root
     if 'root_dir' in cfg:
         args.append(str(cfg['root_dir']))
 
+    # 2. Handle 'scratch' boolean flag specifically
     if cfg.get('scratch') is True:
         args.append('--scratch')
 
-    for k, v in cfg.items():
-        # Use single dash for single letter keys (-d), double for longer (--epochs)
-        prefix = '-' if len(k) == 1 else '--'
-        args.append(f'{prefix}{k} {v}')
-
-    # 2. Append keys from the 'dann' section
+    # 3. Flatten the 'dann' block (extract d, s, t, a)
     if 'dann' in cfg and isinstance(cfg['dann'], dict):
         for k, v in cfg['dann'].items():
             # Use single dash for single letter keys (-d), double for longer (--epochs)
             prefix = '-' if len(k) == 1 else '--'
             args.append(f'{prefix}{k} {v}')
 
+    # 4. Handle all other top-level keys
+    for k, v in cfg.items():
+        if k not in ignore_keys:
+            prefix = '-' if len(k) == 1 else '--'
+            args.append(f'{prefix}{k} {v}')
+
     print(' '.join(args))
 except Exception as e:
-    # Print error to stderr so it doesn't get captured into the variable
     print(f'Error parsing yaml: {e}', file=sys.stderr)
     sys.exit(1)
 ")
@@ -78,8 +81,8 @@ except Exception as e:
 # --- start training under nohup ---
 echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py $DANN_ARGS"
 
-# Removed \"$CFG_FILE\" from the end of the command below as requested
-nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py --scratch \
+# Note: --scratch is now handled inside DANN_ARGS
+nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py \
     $DANN_ARGS >> "$LOG_FILE" 2>&1 &
 
 PY_PID=$!
@@ -90,17 +93,14 @@ echo "Log file   : $LOG_FILE"
 echo "Latest log : $LOG_DIR/latest.log"
 echo
 
-# --- live log streaming if interactive ---
+# --- live log streaming ---
 if [ -t 1 ]; then
   echo "Streaming logs. Press Ctrl-C to stop following (training continues in background)."
-  echo "Tip: run '\''tail -f $LOG_FILE'\'' anytime."
   tail -n +1 -f "$LOG_FILE" &
   TAIL_PID=$!
   wait "$PY_PID" || true
   kill "$TAIL_PID" >/dev/null 2>&1 || true
-  echo
   echo "dann.py exited. See full logs in: $LOG_FILE"
 else
-  echo "Non-interactive session detected. Training continues under nohup."
-  echo "Check progress later with: tail -f $LOG_FILE"
+  echo "Non-interactive session. Check progress with: tail -f $LOG_FILE"
 fi
