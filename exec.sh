@@ -33,7 +33,7 @@ LOG_FILE="$LOG_DIR/main_${TS}_${CFG_TAG}.log"
 ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 
 echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
-./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
+CUDA_VISIBLE_DEVICES=0 ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
 # --- Parse YAML to build arguments for dann.py ---
 DANN_ARGS=$(./.venv/bin/python -c "

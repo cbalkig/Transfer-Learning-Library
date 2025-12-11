@@ -27,6 +27,7 @@ from tllib.utils.logger import CompleteLogger
 from tllib.utils.analysis import collect_feature, tsne, a_distance
 
 device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.mps.is_available() else "cpu")
+print(f'***** Device: {device} *****')
 
 
 def main(args: argparse.Namespace):
