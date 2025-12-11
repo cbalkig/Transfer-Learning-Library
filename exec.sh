@@ -18,7 +18,7 @@ SHUTDOWN_GRACE_SECS="${SHUTDOWN_GRACE_SECS:-120}"
 
 # --- enter repo root ---
 cd "$(dirname "$0")"
-PYTHONPATH=.
+export PYTHONPATH=.
 
 # --- update repo ---
 git pull --rebase --autostash || echo "git pull failed (continuing anyway)"
