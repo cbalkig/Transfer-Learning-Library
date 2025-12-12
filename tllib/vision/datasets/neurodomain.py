@@ -9,6 +9,8 @@ class NeuroDomain(ImageList):
     DOMAINS = {
         'neurodomain': ['train', 'val'],
         'vegfru': ['train', 'val', 'test'],
+        'oi_v7': ['train', 'val', 'test'],
+        'fruits-262': ['train', 'val', 'test'],
     }
 
     def __init__(self, root: str, task: str, split: str, download: bool = False, **kwargs):
