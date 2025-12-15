@@ -35,8 +35,8 @@ ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
 CUDA_VISIBLE_DEVICES=0 ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
-# --- Parse YAML to build arguments for dann.py ---
-DANN_ARGS=$(./.venv/bin/python -c "
+# --- Parse YAML to build arguments for given py ---
+$ARGS=$(./.venv/bin/python -c "
 import sys, yaml
 
 try:
@@ -48,8 +48,7 @@ try:
     # Keys to exclude from the generic loop because they are handled manually
     # 'root_dir': Positional arg
     # 'scratch': Boolean flag
-    # 'dann': Needs flattening
-    ignore_keys = {'root_dir', 'scratch', 'dann'}
+    ignore_keys = {'root_dir', 'scratch'}
 
     # 1. Positional argument: Data Root
     if 'root_dir' in cfg:
@@ -58,13 +57,6 @@ try:
     # 2. Handle 'scratch' boolean flag specifically
     if cfg.get('scratch') is True:
         args.append('--scratch')
-
-    # 3. Flatten the 'dann' block (extract d, s, t, a)
-    if 'dann' in cfg and isinstance(cfg['dann'], dict):
-        for k, v in cfg['dann'].items():
-            # Use single dash for single letter keys (-d), double for longer (--epochs)
-            prefix = '-' if len(k) == 1 else '--'
-            args.append(f'{prefix}{k} {v}')
 
     # 4. Handle all other top-level keys
     for k, v in cfg.items():
@@ -79,16 +71,16 @@ except Exception as e:
 ")
 
 # --- start training under nohup ---
-echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py $DANN_ARGS"
+echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/mdd.py $ARGS"
 
-# Note: --scratch is now handled inside DANN_ARGS
-nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py \
-    $DANN_ARGS >> "$LOG_FILE" 2>&1 &
+# Note: --scratch is now handled inside $ARGS
+nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/mdd.py \
+    $ARGS >> "$LOG_FILE" 2>&1 &
 
 PY_PID=$!
-echo "$PY_PID" > "$LOG_DIR/dann.pid"
+echo "$PY_PID" > "$LOG_DIR/mdd.pid"
 
-echo "dann.py PID: $PY_PID"
+echo "mdd.py PID: $PY_PID"
 echo "Log file   : $LOG_FILE"
 echo "Latest log : $LOG_DIR/latest.log"
 echo
@@ -100,7 +92,7 @@ if [ -t 1 ]; then
   TAIL_PID=$!
   wait "$PY_PID" || true
   kill "$TAIL_PID" >/dev/null 2>&1 || true
-  echo "dann.py exited. See full logs in: $LOG_FILE"
+  echo "mdd.py exited. See full logs in: $LOG_FILE"
 else
   echo "Non-interactive session. Check progress with: tail -f $LOG_FILE"
 fi
