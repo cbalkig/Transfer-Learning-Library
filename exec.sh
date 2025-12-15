@@ -36,7 +36,7 @@ echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
 CUDA_VISIBLE_DEVICES=0 ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
 # --- Parse YAML to build arguments for given py ---
-$ARGS=$(./.venv/bin/python -c "
+$X_ARGS=$(./.venv/bin/python -c "
 import sys, yaml
 
 try:
@@ -71,11 +71,11 @@ except Exception as e:
 ")
 
 # --- start training under nohup ---
-echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/mdd.py $ARGS"
+echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/mdd.py $X_ARGS"
 
-# Note: --scratch is now handled inside $ARGS
+# Note: --scratch is now handled inside $X_ARGS
 nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/mdd.py \
-    $ARGS >> "$LOG_FILE" 2>&1 &
+    $X_ARGS >> "$LOG_FILE" 2>&1 &
 
 PY_PID=$!
 echo "$PY_PID" > "$LOG_DIR/mdd.pid"
