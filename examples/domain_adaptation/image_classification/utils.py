@@ -69,6 +69,13 @@ def get_dataset(dataset_name, root, source, target, train_source_transform, val_
         test_dataset = concat_dataset(root=root, tasks=target, split='test', download=True, transform=val_transform, start_idx=0)
         class_names = train_source_dataset.datasets[0].classes
         num_classes = len(class_names)
+
+        print(f'Number of classes: {num_classes}')
+        print(f'Number of train source samples: {len(train_source_dataset)}')
+        print(f'Number of train target samples: {len(train_target_dataset)}')
+        print(f'Number of val samples: {len(val_dataset)}')
+        print(f'Number of test samples: {len(test_dataset)}')
+
     elif dataset_name == "Digits":
         train_source_dataset = datasets.__dict__[source[0]](osp.join(root, source[0]), download=True,
                                                             transform=train_source_transform)
