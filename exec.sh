@@ -36,7 +36,7 @@ echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
 CUDA_VISIBLE_DEVICES=0 ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
 # --- Parse YAML to build arguments for given py ---
-$X_ARGS=$(./.venv/bin/python -c "
+X_ARGS=$(./.venv/bin/python -c "
 import sys, yaml
 
 try:
