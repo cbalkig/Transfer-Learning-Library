@@ -149,7 +149,7 @@ def validate(val_loader, model, args, device) -> float:
                 progress.display(i)
 
         f1 = f1_score(all_targets, all_preds, average='macro')
-        print(f' * Acc@1 {top1.avg:.3f} F1 Score {f1:.3f}')
+        print(f' * Acc@1 {top1.avg:.3f} F1 Score {f1 * 100:.2f}')
         if confmat:
             print(confmat.format(args.class_names))
 
