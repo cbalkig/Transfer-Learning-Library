@@ -64,7 +64,7 @@ def get_dataset(dataset_name, root, source, target, train_source_transform, val_
         train_target_transform = train_source_transform
     if dataset_name  == "NeuroDomain":
         train_source_dataset = concat_dataset(root=root, tasks=source, split='train', download=True, transform=train_source_transform, start_idx=0)
-        train_target_dataset = concat_dataset(root=root, tasks=target, split='test', download=True, transform=train_target_transform, start_idx=0)
+        train_target_dataset = concat_dataset(root=root, tasks=target, split='train', download=True, transform=train_target_transform, start_idx=0)
         val_dataset = concat_dataset(root=root, tasks=target, split='val', download=True, transform=val_transform, start_idx=0)
         test_dataset = concat_dataset(root=root, tasks=target, split='test', download=True, transform=val_transform, start_idx=0)
         class_names = train_source_dataset.datasets[0].classes
