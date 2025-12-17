@@ -36,7 +36,7 @@ def main():
     with open(args.cfg_file, 'r') as f:
         config = yaml.safe_load(f)
 
-    k_fold_id = config.get("k_fold_id")
+    k_fold_id = config.get("k-fold-id")
     root_dir = str(Path(config.get('root_dir')) / f'k-fold-{str(k_fold_id)}')
     source_folder = config.get('source')
     target_folder = config.get('target')
