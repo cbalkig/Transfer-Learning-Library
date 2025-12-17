@@ -1,5 +1,7 @@
 import os
 import argparse
+from pathlib import Path
+
 import yaml
 
 def create_list(root_dir, sub_folder, split, output_filename):
@@ -34,7 +36,8 @@ def main():
     with open(args.cfg_file, 'r') as f:
         config = yaml.safe_load(f)
 
-    root_dir = config.get('root_dir')
+    k_fold_id = config.get("k_fold_id")
+    root_dir = str(Path(config.get('root_dir')) / f'k-fold-{str(k_fold_id)}')
     source_folder = config.get('source')
     target_folder = config.get('target')
 
