@@ -9,7 +9,7 @@ die() { echo "Error: $*" >&2; exit 1; }
 SCRIPT_NAME="$1"  # e.g., "dann"
 CFG_FILE="$2"     # e.g., "neurodomain.yaml"
 
-# Construct the Python file path based on the script name provided
+# Path to the python script
 PY_SCRIPT_PATH="examples/domain_adaptation/image_classification/${SCRIPT_NAME}.py"
 
 [[ -f "$CFG_FILE" ]] || die "Config file not found: $CFG_FILE"
@@ -27,63 +27,24 @@ export PYTHONPATH=.
 # --- update repo ---
 git pull --rebase --autostash || echo "git pull failed (continuing anyway)"
 
-# --- 1. Parse YAML Metadata for Logging Structure ---
-# We extract 'd', 't', and 'root_dir' early to build the log path
-eval $(./.venv/bin/python -c "
-import sys, yaml, re
-
-try:
-    with open('$CFG_FILE', 'r') as f:
-        cfg = yaml.safe_load(f)
-
-    # Safe retrieval of keys
-    d_val = cfg.get('d', 'UnknownD')
-    t_val = cfg.get('t', 'UnknownT')
-    root_val = cfg.get('root_dir', '')
-
-    print(f\"META_D='{d_val}'\")
-    print(f\"META_T='{t_val}'\")
-    print(f\"META_ROOT='{root_val}'\")
-
-except Exception as e:
-    # Fallback to defaults if parsing fails, so the script doesn't crash immediately
-    print(\"META_D='UnknownD'\")
-    print(\"META_T='UnknownT'\")
-    print(\"META_ROOT=''\")
-")
-
-# --- 2. Extract Fold ID ---
-# Regex to find 'k-fold-X' inside the root_dir string
-if [[ "$META_ROOT" =~ k-fold-([0-9]+) ]]; then
-    FOLD_ID="${BASH_REMATCH[1]}"
-else
-    FOLD_ID="0" # Default if not found
-fi
-
-# --- 3. Construct Log Directory ---
-# Structure: logs / <d>_2_<t> / SCRIPT_NAME / <fold_id>
-LOG_BASE="logs"
-LOG_DIR="${LOG_BASE}/${META_D}_2_${META_T}/${SCRIPT_NAME}/${FOLD_ID}"
-
+# --- Bash Logging Setup (Standard) ---
+LOG_DIR="logs"
 mkdir -p "$LOG_DIR"
-
 TS="$(date '+%Y%m%d_%H%M%S')"
-# Simplified filename since the directory structure now carries most of the info
-LOG_FILE="$LOG_DIR/run_${TS}.log"
+CFG_BASENAME="$(basename "$CFG_FILE")"
+CFG_TAG="${CFG_BASENAME%.*}"
 
-# Link 'latest.log' inside the specific folder for easy checking
+# Bash log captures stdout/stderr
+LOG_FILE="$LOG_DIR/main_${SCRIPT_NAME}_${TS}_${CFG_TAG}.log"
 ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 
-echo "Log Directory: $LOG_DIR"
-echo "Log File     : $LOG_FILE"
-
-# --- Pre-processing ---
 echo "Starting Pre-processing: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
 CUDA_VISIBLE_DEVICES=0 ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
-# --- Parse YAML to build arguments for main script ---
+# --- Parse YAML & Build Dynamic Arguments ---
+# We pass SCRIPT_NAME into the python block to build the specific log path
 X_ARGS=$(./.venv/bin/python -c "
-import sys, yaml
+import sys, yaml, re, os
 
 try:
     with open('$CFG_FILE', 'r') as f:
@@ -91,18 +52,36 @@ try:
 
     args = []
 
-    # Keys to exclude from the generic loop because they are handled manually
-    ignore_keys = {'root_dir', 'scratch'}
+    # 1. Extract Metadata for Dynamic Log Path
+    d_val = cfg.get('d', 'UnknownD')
+    t_val = cfg.get('t', 'UnknownT')
+    root_val = cfg.get('root_dir', '')
 
-    # 1. Positional argument: Data Root
+    # Extract fold_id from root_dir (expects 'k-fold-X')
+    fold_match = re.search(r'k-fold-(\d+)', str(root_val))
+    fold_id = fold_match.group(1) if fold_match else '0'
+
+    # Construct the dynamic log path: logs / <d>_2_<t> / SCRIPT_NAME / <fold_id>
+    # Note: We use the SCRIPT_NAME passed from bash
+    script_name = '$SCRIPT_NAME'
+    dynamic_log_path = os.path.join('logs', f'{d_val}_2_{t_val}', script_name, fold_id)
+
+    # 2. Add the dynamic log argument
+    args.append(f'--log {dynamic_log_path}')
+
+    # 3. Handle Positional & Boolean Args
+    # 'root_dir': Positional arg
+    # 'scratch': Boolean flag
+    # 'log': We ignore the YAML log path to use our dynamic one
+    ignore_keys = {'root_dir', 'scratch', 'log'}
+
     if 'root_dir' in cfg:
         args.append(str(cfg['root_dir']))
 
-    # 2. Handle 'scratch' boolean flag specifically
     if cfg.get('scratch') is True:
         args.append('--scratch')
 
-    # 3. Handle all other top-level keys
+    # 4. Handle all other keys
     for k, v in cfg.items():
         if k not in ignore_keys:
             prefix = '-' if len(k) == 1 else '--'
@@ -114,17 +93,17 @@ except Exception as e:
     sys.exit(1)
 ")
 
-# --- start training under nohup ---
+# --- Start Training ---
 echo "Starting Training: ./.venv/bin/python $PY_SCRIPT_PATH $X_ARGS"
+echo "Check main log at: $LOG_FILE"
 
-#nohup ./.venv/bin/python "$PY_SCRIPT_PATH" \
-#    $X_ARGS >> "$LOG_FILE" 2>&1 &
+nohup ./.venv/bin/python "$PY_SCRIPT_PATH" \
+    $X_ARGS >> "$LOG_FILE" 2>&1 &
 
 PY_PID=$!
-# PID file saved in the specific log dir
-echo "$PY_PID" > "$LOG_DIR/process.pid"
+echo "$PY_PID" > "$LOG_DIR/${SCRIPT_NAME}.pid"
 
-echo "PID          : $PY_PID"
+echo "${SCRIPT_NAME}.py PID: $PY_PID"
 echo
 
 # --- live log streaming ---
@@ -134,7 +113,7 @@ if [ -t 1 ]; then
   TAIL_PID=$!
   wait "$PY_PID" || true
   kill "$TAIL_PID" >/dev/null 2>&1 || true
-  echo "Process exited. See full logs in: $LOG_FILE"
+  echo "${SCRIPT_NAME}.py exited."
 else
   echo "Non-interactive session. Check progress with: tail -f $LOG_FILE"
 fi
