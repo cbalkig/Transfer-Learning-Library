@@ -4,10 +4,18 @@ set -Eeuo pipefail
 die() { echo "Error: $*" >&2; exit 1; }
 
 # --- args ---
-[[ $# -ge 1 ]] || die "Please provide a .yaml config file (e.g., ./exec.sh m.yaml)"
-CFG_FILE="$1"
+[[ $# -ge 2 ]] || die "Usage: ./exec.sh <script_name> <config_file> (e.g., ./exec.sh dann neurodomain.yaml)"
+
+SCRIPT_NAME="$1"  # e.g., "dann"
+CFG_FILE="$2"     # e.g., "neurodomain.yaml"
+
+# Construct the Python file path based on the script name provided
+# Assumes the script lives in examples/domain_adaptation/image_classification/
+PY_SCRIPT_PATH="examples/domain_adaptation/image_classification/${SCRIPT_NAME}.py"
 
 [[ -f "$CFG_FILE" ]] || die "Config file not found: $CFG_FILE"
+[[ -f "$PY_SCRIPT_PATH" ]] || die "Python script not found: $PY_SCRIPT_PATH"
+
 case "$CFG_FILE" in
   *.yaml|*.yml) : ;;
   *) die "Config must be a .yaml/.yml file: $CFG_FILE" ;;
@@ -29,10 +37,12 @@ mkdir -p "$LOG_DIR"
 TS="$(date '+%Y%m%d_%H%M%S')"
 CFG_BASENAME="$(basename "$CFG_FILE")"
 CFG_TAG="${CFG_BASENAME%.*}"
-LOG_FILE="$LOG_DIR/main_${TS}_${CFG_TAG}.log"
+
+# Log file now includes the script name (e.g., main_dann_2023..._neurodomain.log)
+LOG_FILE="$LOG_DIR/main_${SCRIPT_NAME}_${TS}_${CFG_TAG}.log"
 ln -sfn "$(basename "$LOG_FILE")" "$LOG_DIR/latest.log"
 
-echo "Starting: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
+echo "Starting Pre-processing: ./.venv/bin/python create_file_list.py --cfg_file $CFG_FILE"
 CUDA_VISIBLE_DEVICES=0 ./.venv/bin/python create_file_list.py --cfg_file "$CFG_FILE" >> "$LOG_FILE"
 
 # --- Parse YAML to build arguments for given py ---
@@ -58,7 +68,7 @@ try:
     if cfg.get('scratch') is True:
         args.append('--scratch')
 
-    # 4. Handle all other top-level keys
+    # 3. Handle all other top-level keys
     for k, v in cfg.items():
         if k not in ignore_keys:
             prefix = '-' if len(k) == 1 else '--'
@@ -71,16 +81,17 @@ except Exception as e:
 ")
 
 # --- start training under nohup ---
-echo "Starting: ./.venv/bin/python examples/domain_adaptation/image_classification/dann.py $X_ARGS"
+echo "Starting Training: ./.venv/bin/python $PY_SCRIPT_PATH $X_ARGS"
 
-# Note: --scratch is now handled inside $X_ARGS
-nohup ./.venv/bin/python ./examples/domain_adaptation/image_classification/dann.py \
+# Execute the dynamic script path
+nohup ./.venv/bin/python "$PY_SCRIPT_PATH" \
     $X_ARGS >> "$LOG_FILE" 2>&1 &
 
 PY_PID=$!
-echo "$PY_PID" > "$LOG_DIR/dann.pid"
+# PID file is named after the script (e.g., logs/dann.pid)
+echo "$PY_PID" > "$LOG_DIR/${SCRIPT_NAME}.pid"
 
-echo "dann.py PID: $PY_PID"
+echo "${SCRIPT_NAME}.py PID: $PY_PID"
 echo "Log file   : $LOG_FILE"
 echo "Latest log : $LOG_DIR/latest.log"
 echo
@@ -92,7 +103,7 @@ if [ -t 1 ]; then
   TAIL_PID=$!
   wait "$PY_PID" || true
   kill "$TAIL_PID" >/dev/null 2>&1 || true
-  echo "dann.py exited. See full logs in: $LOG_FILE"
+  echo "${SCRIPT_NAME}.py exited. See full logs in: $LOG_FILE"
 else
   echo "Non-interactive session. Check progress with: tail -f $LOG_FILE"
 fi
