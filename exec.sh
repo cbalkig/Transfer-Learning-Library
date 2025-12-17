@@ -57,7 +57,7 @@ try:
     t_val = cfg.get('t', 'UnknownT')
     root_val = cfg.get('root_dir', '')
     log_val = cfg.get('log_dir', '')
-    fold_id = cfg.get_int('k-fold-id', 0)
+    fold_id = cfg.get('k-fold-id', 0)
 
     # Construct the dynamic log path: logs / <d>_2_<t> / SCRIPT_NAME / <fold_id>
     # Note: We use the SCRIPT_NAME passed from bash
