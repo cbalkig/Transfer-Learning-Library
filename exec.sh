@@ -63,18 +63,16 @@ try:
     # Note: We use the SCRIPT_NAME passed from bash
     script_name = '$SCRIPT_NAME'
     dynamic_log_path = os.path.join(log_val, f'{d_val}_2_{t_val}', script_name, f'k-fold-{str(fold_id)}')
+    dynamic_root_path = os.path.join(root_val, f'k-fold-{str(fold_id)}')
 
     # 2. Add the dynamic log argument
     args.append(f'--log {dynamic_log_path}')
 
     # 3. Handle Positional & Boolean Args
-    # 'root_dir': Positional arg
-    # 'scratch': Boolean flag
-    # 'log': We ignore the YAML log path to use our dynamic one
     ignore_keys = {'root_dir', 'scratch', 'log_dir', 'k-fold-id'}
 
     if 'root_dir' in cfg:
-        args.append(str(cfg['root_dir']))
+        args.append(f'{dynamic_root_path}')
 
     if cfg.get('scratch') is True:
         args.append('--scratch')
@@ -99,19 +97,29 @@ echo "Check main log at: $LOG_FILE"
 #    $X_ARGS >> "$LOG_FILE" 2>&1 &
 
 PY_PID=$!
-echo "$PY_PID" > "$LOG_DIR/${SCRIPT_NAME}.pid"
 
-echo "${SCRIPT_NAME}.py PID: $PY_PID"
+# Safety check: If PY_PID is empty, the background process failed to start
+if [[ -z "$PY_PID" ]]; then
+    die "Failed to start the background process. Check your python path or arguments."
+fi
+
+echo "$PY_PID" > "$LOG_DIR/${SCRIPT_NAME}.pid"
+echo "Process ID: $PY_PID"
 echo
 
-# --- live log streaming ---
+# --- 5. Log Streaming ---
 if [ -t 1 ]; then
   echo "Streaming logs. Press Ctrl-C to stop following (training continues in background)."
+  # Follow the log
   tail -n +1 -f "$LOG_FILE" &
   TAIL_PID=$!
+
+  # Wait for the python process
   wait "$PY_PID" || true
+
+  # Cleanup tail when python finishes
   kill "$TAIL_PID" >/dev/null 2>&1 || true
-  echo "${SCRIPT_NAME}.py exited."
+  echo "Process exited."
 else
-  echo "Non-interactive session. Check progress with: tail -f $LOG_FILE"
+  echo "Check progress with: tail -f $LOG_FILE"
 fi
