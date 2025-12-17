@@ -56,6 +56,7 @@ try:
     d_val = cfg.get('d', 'UnknownD')
     t_val = cfg.get('t', 'UnknownT')
     root_val = cfg.get('root_dir', '')
+    log_val = cfg.get('log_dir', '')
 
     # Extract fold_id from root_dir (expects 'k-fold-X')
     fold_match = re.search(r'k-fold-(\d+)', str(root_val))
@@ -64,7 +65,7 @@ try:
     # Construct the dynamic log path: logs / <d>_2_<t> / SCRIPT_NAME / <fold_id>
     # Note: We use the SCRIPT_NAME passed from bash
     script_name = '$SCRIPT_NAME'
-    dynamic_log_path = os.path.join('logs', f'{d_val}_2_{t_val}', script_name, fold_id)
+    dynamic_log_path = os.path.join(log_val, f'{d_val}_2_{t_val}', script_name, fold_id)
 
     # 2. Add the dynamic log argument
     args.append(f'--log {dynamic_log_path}')
@@ -73,7 +74,7 @@ try:
     # 'root_dir': Positional arg
     # 'scratch': Boolean flag
     # 'log': We ignore the YAML log path to use our dynamic one
-    ignore_keys = {'root_dir', 'scratch', 'log'}
+    ignore_keys = {'root_dir', 'scratch', 'log_dir', 'k-fold-id'}
 
     if 'root_dir' in cfg:
         args.append(str(cfg['root_dir']))
