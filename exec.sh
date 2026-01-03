@@ -10,7 +10,7 @@ SCRIPT_NAME="$1"  # e.g., "dann"
 CFG_FILE="$2"     # e.g., "neurodomain.yaml"
 
 # Path to the python script
-PY_SCRIPT_PATH="examples/domain_adaptation/image_classification/${SCRIPT_NAME}.py"
+PY_SCRIPT_PATH="examples/semi_supervised_learning/image_classification/${SCRIPT_NAME}.py"
 
 [[ -f "$CFG_FILE" ]] || die "Config file not found: $CFG_FILE"
 [[ -f "$PY_SCRIPT_PATH" ]] || die "Python script not found: $PY_SCRIPT_PATH"
